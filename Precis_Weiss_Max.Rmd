@@ -6,19 +6,27 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(echo = TRUE)
 
 library(tidyverse)
 library(dplyr)
 library(knitr)
 library(kableExtra)
+library(lubridate)
 
-twitter <- read_csv("ira_users_csv_hashed")
+twitter <- read_csv("ira_users_csv_hashed") %>%
+  mutate(account_creation_date = ymd(account_creation_date))
 
 ```
 
-##First Ten Rows of 2016 Twitter Bot Data
-```{r}
+
+####This is data recently released by Twitter. Twitter removed the 3,841 Twitter accounts included in this dataset because Twitter believed they were linked to the state-backed Russian Internet Research Agency. The dataset includes information about the accounts including follower/following numbers, account descriptions, language used, and date created. A better understanding of this dataset would better aid our understanding of the state-backed Russian campaign to meddle in the 2016 Presidential Election. 
+####[Dataset Can Be Found Here](https://about.twitter.com/en_us/values/elections-integrity.html#data)
+
+#
+
+##First Ten Rows of Russian Twitter Data
+```{r, echo=FALSE}
 
 twitter_head <- twitter %>%
   select(userid, user_reported_location:account_language) %>%
@@ -26,6 +34,53 @@ twitter_head <- twitter %>%
 
 kable(twitter_head, caption = "Note: 'user_display_name' and 'user_screen_name' columns were dropped for aesthetics") %>%
   kable_styling(bootstrap_options = "striped", font_size = 8.25)
+
+```
+
+##
+```{r, echo=FALSE}
+
+twitter %>%
+  ggplot(aes(x = account_creation_date)) +
+    labs(title = "Frequency of Dates When Russian Twitter Accounts Created") +
+    geom_histogram(bins = 120, fill = "light blue", color = "blue")
+
+```
+
+#Average Number of Followers and Number Following
+```{r, echo=FALSE}
+
+twitter %>%
+  summarize(mean_followers = mean(follower_count),
+            median_followers = median(follower_count),
+            mean_following = mean(following_count),
+            median_following = median(following_count)) %>%
+  kable() %>%
+    kable_styling(bootstrap_options = "striped", font_size = 10)
+
+```
+
+##Number of Times Different Partisan Words used in User Profile Description
+```{r, echo = FALSE}
+
+c(
+  c("Trump", sum(str_detect(twitter$user_profile_description, "Trump"), na.rm = TRUE)),
+  c("Conservative", sum(str_detect(twitter$user_profile_description, "Conservative"), na.rm = TRUE)),
+  c("Republican", sum(str_detect(twitter$user_profile_description, "Republican"), na.rm = TRUE)))
+
+c(
+  c("Hillary", sum(str_detect(twitter$user_profile_description, "Hillary"), na.rm = TRUE)),
+  c("Liberal", sum(str_detect(twitter$user_profile_description, "Liberal"), na.rm = TRUE)),
+  c("Democrat", sum(str_detect(twitter$user_profile_description, "Democrat"), na.rm = TRUE)))
+
+```
+
+##Counts of Account Language
+```{r, echo=FALSE}
+
+twitter %>%
+  count(account_language) %>%
+  kable()
 
 ```
 
